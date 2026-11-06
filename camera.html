@@ -1,0 +1,540 @@
+
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+ content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>VibeCam</title>
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: #050505;
+  color: white;
+  font-family: Arial, sans-serif;
+  overflow: hidden;
+}
+
+.app {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  padding: 18px 18px 24px;
+  gap: 15px;
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo {
+  font-size: 23px;
+  font-weight: 800;
+  letter-spacing: -1px;
+}
+
+.logo span { color: #b6a4ff; }
+
+#status {
+  font-size: 12px;
+  color: #aaa;
+}
+
+.view {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  background: #171717;
+  border-radius: 25px;
+  overflow: hidden;
+}
+
+#screen {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+#placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  color: #aaa;
+  text-align: center;
+  padding: 24px;
+  pointer-events: none;
+}
+
+.camera-icon { font-size: 52px; }
+
+#flip {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 43px;
+  height: 43px;
+  border: 1px solid #555;
+  border-radius: 50%;
+  background: #222a;
+  color: white;
+  font-size: 22px;
+}
+
+#timer {
+  position: absolute;
+  top: 20px;
+  left: 16px;
+  font-size: 13px;
+  background: #0009;
+  padding: 7px 10px;
+  border-radius: 20px;
+}
+
+.modes {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  align-items: center;
+}
+
+.mode {
+  color: #888;
+  background: none;
+  border: 0;
+  font-size: 14px;
+  padding: 8px;
+}
+
+.mode.active {
+  color: #f7d779;
+  font-weight: bold;
+}
+
+.filters {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.filter {
+  color: white;
+  background: #202020;
+  border: 1px solid #383838;
+  border-radius: 20px;
+  padding: 9px 15px;
+  font-size: 12px;
+}
+
+.filter.active {
+  border-color: #b6a4ff;
+  background: #39304f;
+}
+
+.controls {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  min-height: 78px;
+}
+
+.side {
+  width: 65px;
+  background: none;
+  border: 0;
+  color: white;
+  font-size: 12px;
+}
+
+.side .symbol {
+  display: block;
+  font-size: 25px;
+  margin-bottom: 5px;
+}
+
+.shutter {
+  width: 76px;
+  height: 76px;
+  border: 5px solid white;
+  border-radius: 50%;
+  background: #ddd;
+  box-shadow: 0 0 0 3px #555;
+  display: grid;
+  place-items: center;
+}
+
+.shutter-inner {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: white;
+}
+
+.shutter.recording .shutter-inner {
+  width: 27px;
+  height: 27px;
+  border-radius: 7px;
+  background: #ff3535;
+}
+
+button { cursor: pointer; }
+
+.note {
+  font-size: 11px;
+  text-align: center;
+  color: #777;
+}
+
+video { display: none; }
+</style>
+</head>
+
+<body>
+<div class="app">
+  
+<div class="filters" id="filters">
+  <button class="filter active" data-filter="none">Natural</button>
+  <button class="filter" data-filter="warm">Warm</button>
+  <button class="filter" data-filter="cool">Cool</button>
+  <button class="filter" data-filter="vintage">Vintage</button>
+  <button class="filter" data-filter="cinematic">Cinematic</button>
+  <button class="filter" data-filter="mono">Mono</button>
+  <button class="filter" data-filter="dreamy">Dreamy</button>
+  <button class="filter" data-filter="blackgold">Black Gold</button>
+  <button class="filter" data-filter="retro">Retro</button>
+  <button class="filter" data-filter="vivid">Vivid</button>
+  <button class="filter" data-filter="fade">Soft Fade</button>
+  <button class="filter" data-filter="night">Night</button>
+</div>
+
+
+  <div class="top">
+    <div class="logo">Vibe<span>Cam.</span></div>
+    <div id="status">Camera বন্ধ</div>
+  </div>
+
+  <div class="view">
+    <video id="video" autoplay playsinline muted></video>
+    <canvas id="screen"></canvas>
+
+    <div id="placeholder">
+      <div class="camera-icon">📷</div>
+      <strong>তোমার মুহূর্ত, তোমার vibe</strong>
+      <span>ক্যামেরা চালু করতে নিচের Start-এ চাপ দাও</span>
+    </div>
+
+    <div id="timer">PHOTO</div>
+    <button id="flip" aria-label="ক্যামেরা বদলাও">↻</button>
+  </div>
+
+  <div class="modes">
+    <button class="mode active" data-mode="photo">PHOTO</button>
+    <button class="mode" data-mode="video">VIDEO</button>
+  </div>
+
+  <div class="filters">
+    <button class="filter active" data-filter="none">Natural</button>
+    <button class="filter" data-filter="warm">Warm</button>
+    <button class="filter" data-filter="cinematic">Cinematic</button>
+    <button class="filter" data-filter="mono">Mono</button>
+  </div>
+
+  <div class="controls">
+    <button class="side" id="start">
+      <span class="symbol">◉</span>Start
+    </button>
+
+    <button class="shutter" id="shutter"
+      aria-label="ছবি তুলুন অথবা রেকর্ড করুন">
+      <span class="shutter-inner"></span>
+    </button>
+
+    <button class="side" id="save">
+      <span class="symbol">⇩</span>Save
+    </button>
+  </div>
+
+  <div class="note">VibeCam • Create your own look</div>
+</div>
+
+<script>
+const video = document.getElementById("video");
+const screen = document.getElementById("screen");
+const ctx = screen.getContext("2d");
+const placeholder = document.getElementById("placeholder");
+const statusText = document.getElementById("status");
+const timer = document.getElementById("timer");
+const shutter = document.getElementById("shutter");
+
+let stream = null;
+let mode = "photo";
+let filter = "none";
+let facing = "environment";
+let recording = null;
+let chunks = [];
+let lastBlob = null;
+let raf = null;
+let startedAt = 0;
+let timerInterval = null;
+
+const filters = {
+  none: "none",
+  warm: "saturate(1.15) sepia(0.12) contrast(1.04)",
+  cinematic: "saturate(0.85) contrast(1.15) sepia(0.08)",
+  mono: "grayscale(1) contrast(1.08)"
+};
+
+function setStatus(text) {
+  statusText.textContent = text;
+}
+
+async function startCamera() {
+  stopCamera();
+
+  if (!navigator.mediaDevices?.getUserMedia) {
+    setStatus("Browser support নেই");
+    alert("Chrome-এ HTTPS বা নিরাপদ camera-enabled page দিয়ে খোলো।");
+    return;
+  }
+
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      audio: true,
+      video: {
+        facingMode: { ideal: facing },
+        width: { ideal: 1920 },
+        height: { ideal: 1080 }
+      }
+    });
+
+    video.srcObject = stream;
+    await video.play();
+
+    placeholder.style.display = "none";
+    setStatus("Camera চালু");
+    drawFrame();
+  } catch (err) {
+    setStatus("Camera চালু হয়নি");
+    alert(
+      "ক্যামেরা চালু হয়নি। Chrome permission Allow করো, " +
+      "HTTPS ব্যবহার করো এবং অন্য অ্যাপে camera চলছে কি না দেখো।\n\n" +
+      err.message
+    );
+  }
+}
+
+function stopCamera() {
+  if (raf) cancelAnimationFrame(raf);
+  raf = null;
+
+  if (stream) {
+    stream.getTracks().forEach(track => track.stop());
+  }
+
+  stream = null;
+  video.srcObject = null;
+}
+
+function drawFrame() {
+  if (!stream || video.readyState < 2) {
+    raf = requestAnimationFrame(drawFrame);
+    return;
+  }
+
+  const w = video.videoWidth;
+  const h = video.videoHeight;
+
+  if (!w || !h) {
+    raf = requestAnimationFrame(drawFrame);
+    return;
+  }
+
+  if (screen.width !== w || screen.height !== h) {
+    screen.width = w;
+    screen.height = h;
+  }
+
+  ctx.save();
+  ctx.filter = filters[filter];
+
+  // Camera frame crop: fill the whole canvas
+  const scale = Math.max(screen.width / w, screen.height / h);
+  const dw = w * scale;
+  const dh = h * scale;
+  const dx = (screen.width - dw) / 2;
+  const dy = (screen.height - dh) / 2;
+
+  if (facing === "user") {
+    ctx.translate(screen.width, 0);
+    ctx.scale(-1, 1);
+  }
+
+  ctx.drawImage(video, dx, dy, dw, dh);
+  ctx.restore();
+
+  raf = requestAnimationFrame(drawFrame);
+}
+
+function takePhoto() {
+  if (!stream) {
+    alert("আগে Start-এ চাপ দিয়ে ক্যামেরা চালু করো।");
+    return;
+  }
+
+  screen.toBlob(blob => {
+    if (!blob) {
+      alert("ছবি তৈরি হয়নি। আবার চেষ্টা করো।");
+      return;
+    }
+    lastBlob = blob;
+    downloadBlob(blob, "VibeCam-photo.jpg");
+  }, "image/jpeg", 0.94);
+}
+
+function startRecording() {
+  if (!stream) {
+    alert("আগে Start-এ চাপ দিয়ে ক্যামেরা চালু করো।");
+    return;
+  }
+
+  if (!screen.captureStream || !window.MediaRecorder) {
+    alert("এই browser-এ video recording support নেই। Chrome আপডেট করো।");
+    return;
+  }
+
+  try {
+    const canvasStream = screen.captureStream(30);
+    const audioTrack = stream.getAudioTracks()[0];
+
+    if (audioTrack) canvasStream.addTrack(audioTrack);
+
+    let options = {};
+    if (MediaRecorder.isTypeSupported("video/webm;codecs=vp8,opus")) {
+      options.mimeType = "video/webm;codecs=vp8,opus";
+    } else if (MediaRecorder.isTypeSupported("video/webm")) {
+      options.mimeType = "video/webm";
+    }
+
+    chunks = [];
+    recording = new MediaRecorder(canvasStream, options);
+
+    recording.ondataavailable = e => {
+      if (e.data && e.data.size > 0) chunks.push(e.data);
+    };
+
+    recording.onstop = () => {
+      lastBlob = new Blob(chunks, {
+        type: recording.mimeType || "video/webm"
+      });
+      downloadBlob(lastBlob, "VibeCam-video.webm");
+      canvasStream.getTracks().forEach(t => t.stop());
+      setStatus("ভিডিও সেভ হয়েছে");
+      timer.textContent = "VIDEO";
+    };
+
+    recording.start(250);
+    startedAt = Date.now();
+    timerInterval = setInterval(() => {
+      const seconds = Math.floor((Date.now() - startedAt) / 1000);
+      timer.textContent =
+        "● " + String(Math.floor(seconds / 60)).padStart(2, "0") +
+        ":" + String(seconds % 60).padStart(2, "0");
+    }, 500);
+
+    shutter.classList.add("recording");
+    setStatus("Recording চলছে");
+  } catch (err) {
+    alert("Recording শুরু করা যায়নি: " + err.message);
+  }
+}
+
+function stopRecording() {
+  if (recording && recording.state !== "inactive") {
+    recording.stop();
+  }
+
+  clearInterval(timerInterval);
+  timerInterval = null;
+  shutter.classList.remove("recording");
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+
+document.getElementById("start").onclick = startCamera;
+
+shutter.onclick = () => {
+  if (mode === "photo") {
+    takePhoto();
+  } else if (!recording || recording.state === "inactive") {
+    startRecording();
+  } else {
+    stopRecording();
+  }
+};
+
+document.querySelectorAll(".mode").forEach(btn => {
+  btn.onclick = () => {
+    mode = btn.dataset.mode;
+
+    document.querySelectorAll(".mode").forEach(b =>
+      b.classList.toggle("active", b === btn)
+    );
+
+    timer.textContent = mode.toUpperCase();
+    shutter.classList.remove("recording");
+  };
+});
+
+document.querySelectorAll(".filter").forEach(btn => {
+  btn.onclick = () => {
+    filter = btn.dataset.filter;
+
+    document.querySelectorAll(".filter").forEach(b =>
+      b.classList.toggle("active", b === btn)
+    );
+  };
+});
+
+document.getElementById("flip").onclick = async () => {
+  if (recording && recording.state !== "inactive") {
+    alert("Recording বন্ধ করে camera বদলাও।");
+    return;
+  }
+
+  facing = facing === "environment" ? "user" : "environment";
+
+  if (stream) await startCamera();
+};
+
+document.getElementById("save").onclick = () => {
+  if (lastBlob) {
+    downloadBlob(
+      lastBlob,
+      mode === "photo" ? "VibeCam-photo.jpg" : "VibeCam-video.webm"
+    );
+  } else {
+    alert("আগে একটি ছবি তোলো অথবা ভিডিও রেকর্ড করো।");
+  }
+};
+</script>
+</body>
+</html>
